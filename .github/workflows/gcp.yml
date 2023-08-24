@@ -10,6 +10,9 @@ jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: stock-dashboard-web-app
+      PROJECT_ID: avid-wavelet-394403
 
     strategy:
       matrix:
