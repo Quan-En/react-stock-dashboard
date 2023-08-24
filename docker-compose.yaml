@@ -1,0 +1,12 @@
+version: '1.0'
+
+services:
+  web-app:
+    build: .
+    container_name: web-app
+    environment:
+      - REACT_APP_FINNHUB_API_KEY=${REACT_APP_FINNHUB_API_KEY}
+    ports:
+      - '3000:3000'
+    stdin_open: true
+    tty: true
