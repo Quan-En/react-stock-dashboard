@@ -27,23 +27,60 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Run the tests and generate coverage report
-      run: npm test -- --coverage
+    - uses: google-github-actions/setup-gcloud@v0
+      with:
+        service_account_key: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+        project_id: ${{ env.PROJECT_ID }}
+        export_default_credentials: true
 
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v1
+    - name: Build Docker Image
+      run: docker build -t $IMAGE_NAME:latest .
 
-    - name: Build
-      run: npm run build
-
-    - name: Deploy
+    - name: Automatic Tagging of Releases
+      id: increment-git-tag
       run: |
-        git config --global user.name $user_name
-        git config --global user.email $user_email
-        git remote set-url origin https://${github_token}@github.com/${repository}
-        npm run deploy
+        bash ./scripts/git_update.sh -v major
+
+    - name: Configure Docker Client
+      run: |-
+        gcloud auth configure-docker --quiet
+        gcloud auth configure-docker us-west2-docker.pkg.dev --quiet
+
+    - name: Push Docker Image to Container Registry (GCR)
       env:
-        user_name: 'github-actions[bot]'
-        user_email: 'github-actions[bot]@users.noreply.github.com'
-        github_token: ${{ secrets.SERVICE_ACCOUNT_KEY }}
-        repository: ${{ github.repository }}
+        GIT_TAG: ${{ steps.increment-git-tag.outputs.git-tag }}
+      run: |-
+        docker tag $IMAGE_NAME:latest gcr.io/$PROJECT_ID/$IMAGE_NAME:latest
+        docker tag $IMAGE_NAME:latest gcr.io/$PROJECT_ID/$IMAGE_NAME:$GIT_TAG
+        docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:latest
+        docker push gcr.io/$PROJECT_ID/$IMAGE_NAME:$GIT_TAG
+
+    - name: Push Docker Image to Artifact Registry
+      env:
+        GIT_TAG: ${{ steps.increment-git-tag.outputs.git-tag }}
+      run: |-
+        docker tag $IMAGE_NAME:latest us-west2-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:latest
+        docker tag $IMAGE_NAME:latest us-west2-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:$GIT_TAG
+        docker push us-west2-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:latest
+        docker push us-west2-docker.pkg.dev/$PROJECT_ID/images/$IMAGE_NAME:$GIT_TAG
+
+    # - name: Run the tests and generate coverage report
+    #   run: npm test -- --coverage
+
+    # - name: Upload coverage to Codecov
+    #   uses: codecov/codecov-action@v1
+
+    # - name: Build
+    #   run: npm run build
+
+    # - name: Deploy
+    #   run: |
+    #     git config --global user.name $user_name
+    #     git config --global user.email $user_email
+    #     git remote set-url origin https://${github_token}@github.com/${repository}
+    #     npm run deploy
+    #   env:
+    #     user_name: 'github-actions[bot]'
+    #     user_email: 'github-actions[bot]@users.noreply.github.com'
+    #     github_token: ${{ secrets.SERVICE_ACCOUNT_KEY }}
+    #     repository: ${{ github.repository }}
