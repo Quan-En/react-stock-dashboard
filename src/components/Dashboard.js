@@ -3,7 +3,7 @@ import React, { useContext, useState, useEffect } from "react";
 import Header from "./Header";
 import Details from "./Details";
 import Overview from "./Overview";
-import Chart from "./Chart";
+// import Chart from "./Chart";
 import TradingViewChart from "./TradingViewChart";
 
 import ThemeContext from "../context/ThemeContext";
