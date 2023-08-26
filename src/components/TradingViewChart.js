@@ -72,7 +72,7 @@ const TradingViewChart = () => {
       colors={
         darkMode ? 
         { backgroundColor: 'rgb(17, 24, 39)', textColor: 'white', labelColor: "white", labelBackgroundColor:"#9B7DFF", labelBorderColor:"white" } : 
-        { backgroundColor: 'white', textColor: 'block' }
+        { backgroundColor: 'white', textColor: 'block', labelColor: "black" }
       } 
       data={trading_data} 
       />
